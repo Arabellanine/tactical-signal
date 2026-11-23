@@ -1,0 +1,17 @@
+{
+  "name": "TACTICAL SIGNAL // ARABELLANINE",
+  "short_name": "TACTICAL-SIGNAL",
+  "description": "Zero-bloat air-gapped audio-visual Morse beacon, frequency synthesizer & tactical telegraph key",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0c",
+  "theme_color": "#ff2a51",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

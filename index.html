@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TACTICAL SIGNAL // ARABELLANINE</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff2a51">
+  <style>
+    :root {
+      --bg: #0a0a0c;
+      --panel: #111116;
+      --border: #262633;
+      --accent: #ff2a51;
+      --accent-dim: #7a1527;
+      --amber: #ffb834;
+      --cyan: #3df0d0;
+      --text: #d8d8e6;
+      --text-dim: #6e6e85;
+      --font: 'JetBrains Mono', 'SF Mono', Monaco, 'Courier New', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      overflow-x: hidden;
+      background-image: linear-gradient(rgba(255, 42, 81, 0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 42, 81, 0.03) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .hud-frame {
+      width: 100%;
+      max-width: 840px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      padding: 16px;
+      position: relative;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    }
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .hud-title {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hud-title::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+    .status-bar {
+      font-size: 11px;
+      color: var(--amber);
+      letter-spacing: 1px;
+    }
+    .beacon-display {
+      width: 100%;
+      height: 72px;
+      background: #060608;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      transition: background-color 0.05s, border-color 0.05s, box-shadow 0.05s;
+    }
+    .beacon-display.active {
+      background-color: var(--accent-dim);
+      border-color: var(--accent);
+      box-shadow: 0 0 24px var(--accent);
+    }
+    .beacon-text {
+      font-size: 22px;
+      font-weight: bold;
+      letter-spacing: 4px;
+      color: var(--text-dim);
+      z-index: 2;
+      transition: color 0.05s;
+    }
+    .beacon-display.active .beacon-text {
+      color: #fff;
+      text-shadow: 0 0 10px #fff;
+    }
+    .grid-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 600px) {
+      .grid-controls { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: #09090c;
+      border: 1px solid var(--border);
+      padding: 12px;
+    }
+    .card-title {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1.5px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    .control-row label { color: var(--text); }
+    .control-row span { color: var(--amber); font-weight: bold; }
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--accent);
+      background: #1a1a24;
+      height: 6px;
+      margin: 6px 0 12px;
+    }
+    select, input[type=text] {
+      width: 100%;
+      background: #0e0e14;
+      border: 1px solid var(--border);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 8px;
+      margin-bottom: 10px;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    select:focus, input[type=text]:focus {
+      border-color: var(--accent);
+    }
+    .button-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    button {
+      flex: 1;
+      background: #14141d;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    button:hover {
+      border-color: var(--accent);
+      color: #fff;
+      background: #1a1a26;
+    }
+    button:active {
+      transform: scale(0.98);
+      background: var(--accent);
+      color: #000;
+    }
+    button.active-btn {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+    .telegraph-key {
+      width: 100%;
+      height: 140px;
+      background: #08080a;
+      border: 2px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      margin-top: 8px;
+      position: relative;
+      transition: all 0.05s;
+    }
+    .telegraph-key:active, .telegraph-key.key-down {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      box-shadow: inset 0 0 20px var(--accent), 0 0 15px var(--accent);
+    }
+    .telegraph-key-label {
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+    .telegraph-key:active .telegraph-key-label, .telegraph-key.key-down .telegraph-key-label {
+      color: #fff;
+    }
+    .telegraph-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+    .morse-readout {
+      background: #060608;
+      border: 1px solid var(--border);
+      padding: 10px;
+      min-height: 48px;
+      font-size: 13px;
+      color: var(--cyan);
+      word-break: break-all;
+      margin-top: 8px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .footer-telemetry {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      margin-top: 16px;
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .footer-telemetry a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .preset-pills {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .pill {
+      background: #14141e;
+      border: 1px solid var(--border);
+      color: var(--amber);
+      font-size: 10px;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .pill:hover {
+      border-color: var(--amber);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud-frame">
+    <div class="hud-header">
+      <div class="hud-title">TACTICAL SIGNAL // SYNTHESIZER</div>
+      <div class="status-bar" id="audio-status">STANDBY // ZERO-BLOAT PWA</div>
+    </div>
+
+    <div class="beacon-display" id="beacon-display">
+      <div class="beacon-text" id="beacon-text">SYSTEM READY</div>
+    </div>
+
+    <div class="grid-controls">
+      <!-- FREQUENCY & SYNTH CARD -->
+      <div class="card">
+        <div class="card-title">ACOUSTIC FREQUENCY SYNTHESIZER</div>
+        <div class="control-row">
+          <label for="freq-slider">CARRIER PITCH</label>
+          <span id="freq-val">750 HZ</span>
+        </div>
+        <input type="range" id="freq-slider" min="300" max="2400" step="10" value="750">
+
+        <div class="control-row">
+          <label for="wpm-slider">TRANSMISSION SPEED</label>
+          <span id="wpm-val">18 WPM</span>
+        </div>
+        <input type="range" id="wpm-slider" min="5" max="35" step="1" value="18">
+
+        <div class="control-row">
+          <label>WAVEFORM</label>
+          <span id="wave-val">SINE</span>
+        </div>
+        <div class="button-group">
+          <button id="wave-sine" class="active-btn" onclick="setWaveform('sine')">SINE</button>
+          <button id="wave-square" onclick="setWaveform('square')">SQUARE</button>
+          <button id="wave-sawtooth" onclick="setWaveform('sawtooth')">SAW</button>
+        </div>
+      </div>
+
+      <!-- TRANSMISSION ENGINE CARD -->
+      <div class="card">
+        <div class="card-title">MORSE TRANSMISSION MATRIX</div>
+        <div class="preset-pills">
+          <div class="pill" onclick="loadPreset('SOS')">SOS</div>
+          <div class="pill" onclick="loadPreset('CQ CQ CQ')">CQ</div>
+          <div class="pill" onclick="loadPreset('MAYDAY')">MAYDAY</div>
+          <div class="pill" onclick="loadPreset('ARABELLA')">ARABELLA</div>
+          <div class="pill" onclick="loadPreset('TACTICAL')">TACTICAL</div>
+        </div>
+        <input type="text" id="text-input" placeholder="ENTER TACTICAL TRANSMISSION..." value="SOS">
+        <div class="button-group">
+          <button id="tx-btn" onclick="toggleTransmission()">TRANSMIT</button>
+          <button id="loop-btn" onclick="toggleLoop()">LOOP: OFF</button>
+          <button onclick="clearReadout()">CLEAR</button>
+        </div>
+        <div class="morse-readout" id="morse-output">... --- ...</div>
+      </div>
+    </div>
+
+    <!-- MANUAL TELEGRAPH STRAIGHT KEY -->
+    <div class="card">
+      <div class="card-title">MANUAL TACTICAL TELEGRAPH KEY [SPACEBAR / TOUCH]</div>
+      <div class="telegraph-key" id="telegraph-key">
+        <div class="telegraph-key-label">TRANSMIT BEACON [HOLD]</div>
+        <div class="telegraph-sub">LOW-LATENCY ZERO-DRIFT OSCILLATOR KEY</div>
+      </div>
+    </div>
+
+    <div class="footer-telemetry">
+      <span>UNIT: ARABELLANINE LAIR</span>
+      <span>RUNTIME: PURE WEB AUDIO // 0 DEPENDENCIES</span>
+      <span><a href="https://arabellanine.github.io/astral-cockpit/" target="_blank">&lt;&lt; ASTRAL COCKPIT</a></span>
+    </div>
+  </div>
+
+  <script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    // Audio Engine
+    let audioCtx = null;
+    let osc = null;
+    let gainNode = null;
+    let isKeyActive = false;
+    let isTransmitting = false;
+    let isLooping = false;
+    let currentWaveform = 'sine';
+    let transmitTimeout = null;
+
+    const MORSE_MAP = {
+      'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+      'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+      'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+      'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+      'Y': '-.--', 'Z': '--..', '1': '.----', '2': '..---', '3': '...--',
+      '4': '....-', '5': '.....', '6': '-....', '7': '--...', '8': '---..',
+      '9': '----.', '0': '-----', ' ': '/'
+    };
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      document.getElementById('audio-status').innerText = 'AUDIO ACTIVE // ONLINE';
+      document.getElementById('audio-status').style.color = '#3df0d0';
+    }
+
+    function startTone() {
+      initAudio();
+      if (osc) {
+        try { osc.stop(); osc.disconnect(); } catch (e) {}
+      }
+      const freq = parseFloat(document.getElementById('freq-slider').value);
+      osc = audioCtx.createOscillator();
+      osc.type = currentWaveform;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      osc.connect(gainNode);
+      osc.start();
+
+      // De-click attack
+      gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+      gainNode.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.005);
+
+      triggerBeaconVisual(true);
+    }
+
+    function stopTone() {
+      if (!audioCtx || !gainNode) return;
+      gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+      gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.005);
+      triggerBeaconVisual(false);
+    }
+
+    function triggerBeaconVisual(active, label) {
+      const display = document.getElementById('beacon-display');
+      const text = document.getElementById('beacon-text');
+      if (active) {
+        display.classList.add('active');
+        if (label) text.innerText = label;
+      } else {
+        display.classList.remove('active');
+        if (!isTransmitting) text.innerText = 'SYSTEM READY';
+      }
+    }
+
+    // Telegraph Key Controls
+    const keyEl = document.getElementById('telegraph-key');
+
+    function handleKeyDown(e) {
+      if (isKeyActive) return;
+      isKeyActive = true;
+      keyEl.classList.add('key-down');
+      startTone();
+    }
+
+    function handleKeyUp(e) {
+      if (!isKeyActive) return;
+      isKeyActive = false;
+      keyEl.classList.remove('key-down');
+      stopTone();
+    }
+
+    keyEl.addEventListener('mousedown', handleKeyDown);
+    window.addEventListener('mouseup', handleKeyUp);
+    keyEl.addEventListener('touchstart', (e) => { e.preventDefault(); handleKeyDown(); });
+    window.addEventListener('touchend', handleKeyUp);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault();
+        handleKeyDown();
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault();
+        handleKeyUp();
+      }
+    });
+
+    // Parameter sliders
+    document.getElementById('freq-slider').addEventListener('input', (e) => {
+      document.getElementById('freq-val').innerText = e.target.value + ' HZ';
+      if (osc) {
+        osc.frequency.setTargetAtTime(parseFloat(e.target.value), audioCtx.currentTime, 0.01);
+      }
+    });
+
+    document.getElementById('wpm-slider').addEventListener('input', (e) => {
+      document.getElementById('wpm-val').innerText = e.target.value + ' WPM';
+    });
+
+    function setWaveform(wave) {
+      currentWaveform = wave;
+      ['sine', 'square', 'sawtooth'].forEach((w) => {
+        const btn = document.getElementById('wave-' + w);
+        if (btn) btn.classList.toggle('active-btn', w === wave);
+      });
+      document.getElementById('wave-val').innerText = wave.toUpperCase();
+      if (osc) osc.type = wave;
+    }
+
+    function textToMorse(text) {
+      return text.toUpperCase().split('').map(c => MORSE_MAP[c] || '').join(' ').replace(/\s+/g, ' ').trim();
+    }
+
+    document.getElementById('text-input').addEventListener('input', (e) => {
+      document.getElementById('morse-output').innerText = textToMorse(e.target.value);
+    });
+
+    function loadPreset(val) {
+      document.getElementById('text-input').value = val;
+      document.getElementById('morse-output').innerText = textToMorse(val);
+    }
+
+    function clearReadout() {
+      document.getElementById('text-input').value = '';
+      document.getElementById('morse-output').innerText = '';
+      if (isTransmitting) toggleTransmission();
+    }
+
+    // Automated Transmission Engine
+    function toggleTransmission() {
+      if (isTransmitting) {
+        abortTransmission();
+      } else {
+        startTransmission();
+      }
+    }
+
+    function abortTransmission() {
+      isTransmitting = false;
+      if (transmitTimeout) clearTimeout(transmitTimeout);
+      stopTone();
+      document.getElementById('tx-btn').innerText = 'TRANSMIT';
+      document.getElementById('tx-btn').classList.remove('active-btn');
+      document.getElementById('beacon-text').innerText = 'TRANSMISSION ABORTED';
+    }
+
+    function toggleLoop() {
+      isLooping = !isLooping;
+      const btn = document.getElementById('loop-btn');
+      btn.innerText = 'LOOP: ' + (isLooping ? 'ON' : 'OFF');
+      btn.classList.toggle('active-btn', isLooping);
+    }
+
+    function startTransmission() {
+      const rawText = document.getElementById('text-input').value.trim();
+      if (!rawText) return;
+      initAudio();
+
+      isTransmitting = true;
+      document.getElementById('tx-btn').innerText = 'HALT';
+      document.getElementById('tx-btn').classList.add('active-btn');
+
+      const morse = textToMorse(rawText);
+      document.getElementById('morse-output').innerText = morse;
+
+      const wpm = parseInt(document.getElementById('wpm-slider').value, 10);
+      const dotDuration = 1200 / wpm; // Standard PARIS formula in milliseconds
+
+      let sequence = [];
+      for (let i = 0; i < morse.length; i++) {
+        const symbol = morse[i];
+        if (symbol === '.') {
+          sequence.push({ on: true, duration: dotDuration, label: 'DIT (•)' });
+          sequence.push({ on: false, duration: dotDuration });
+        } else if (symbol === '-') {
+          sequence.push({ on: true, duration: dotDuration * 3, label: 'DAH (—)' });
+          sequence.push({ on: false, duration: dotDuration });
+        } else if (symbol === ' ') {
+          sequence.push({ on: false, duration: dotDuration * 2 }); // Space between letters (3 total with element gap)
+        } else if (symbol === '/') {
+          sequence.push({ on: false, duration: dotDuration * 6 }); // Space between words (7 total)
+        }
+      }
+
+      playSequenceStep(sequence, 0, dotDuration);
+    }
+
+    function playSequenceStep(seq, index, dotDuration) {
+      if (!isTransmitting) return;
+
+      if (index >= seq.length) {
+        if (isLooping) {
+          transmitTimeout = setTimeout(() => {
+            playSequenceStep(seq, 0, dotDuration);
+          }, dotDuration * 7);
+          return;
+        }
+        abortTransmission();
+        document.getElementById('beacon-text').innerText = 'TRANSMISSION COMPLETE';
+        return;
+      }
+
+      const step = seq[index];
+      if (step.on) {
+        startTone();
+        triggerBeaconVisual(true, step.label);
+      } else {
+        stopTone();
+        triggerBeaconVisual(false);
+      }
+
+      transmitTimeout = setTimeout(() => {
+        playSequenceStep(seq, index + 1, dotDuration);
+      }, step.duration);
+    }
+  </script>
+</body>
+</html>
